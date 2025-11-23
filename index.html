@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS - Premium Library System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Create Admin Screen -->
+        <div id="create-admin-screen" class="screen">
+            <div class="glass-panel login-panel">
+                <div class="logo-area">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <h1>Welcome</h1>
+                    <p>Setup Admin Account</p>
+                </div>
+                <form id="create-admin-form">
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="create-username" placeholder="Choose Username" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="create-password" placeholder="Choose Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Create Account</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen">
+            <div class="glass-panel login-panel">
+                <div class="logo-area">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                    <h1>LibraryOS</h1>
+                    <p>Next Gen Management</p>
+                </div>
+                <form id="login-form">
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="username" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>Access System</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="screen">
+            <nav class="sidebar">
+                <div class="brand">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                    <span>LibraryOS</span>
+                </div>
+                <ul class="nav-links">
+                    <li class="active" data-view="books"><i class="fa-solid fa-book"></i> Books</li>
+                    <li data-view="add-book"><i class="fa-solid fa-plus"></i> Add Book</li>
+                    <li data-view="issue-return"><i class="fa-solid fa-hand-holding-hand"></i> Issue / Return</li>
+                    <li data-view="students"><i class="fa-solid fa-users"></i> Borrowers</li>
+                    <li data-view="history"><i class="fa-solid fa-clock-rotate-left"></i> History</li>
+                    <li data-view="settings"><i class="fa-solid fa-gear"></i> Settings</li>
+                </ul>
+                <div class="user-profile">
+                    <div class="avatar">A</div>
+                    <div class="info">
+                        <span class="name">Admin</span>
+                        <span class="role">Librarian</span>
+                    </div>
+                    <button id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
+                </div>
+            </nav>
+
+            <main class="content-area">
+                <header>
+                    <h2 id="page-title">Library Books</h2>
+                    <div class="search-bar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="global-search" placeholder="Search books, authors, IDs...">
+                    </div>
+                </header>
+
+                <!-- Views -->
+                <div id="view-books" class="view active">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="icon"><i class="fa-solid fa-book"></i></div>
+                            <div class="details">
+                                <span class="number" id="total-books">0</span>
+                                <span class="label">Total Books</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
+                            <div class="details">
+                                <span class="number" id="available-books">0</span>
+                                <span class="label">Available</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="details">
+                                <span class="number" id="overdue-books">0</span>
+                                <span class="label">Overdue</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon"><i class="fa-solid fa-clock"></i></div>
+                            <div class="details">
+                                <span class="number" id="issued-books">0</span>
+                                <span class="label">Issued</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-container glass-panel">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Author</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="books-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-add-book" class="view">
+                    <div class="glass-panel form-panel">
+                        <h3>Add New Book</h3>
+                        <form id="add-book-form">
+                            <div class="form-group">
+                                <label>Book ID</label>
+                                <input type="number" id="new-book-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" id="new-book-title" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Author</label>
+                                <input type="text" id="new-book-author" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Add Book</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="view-issue-return" class="view">
+                    <div class="grid-2">
+                        <div class="glass-panel form-panel">
+                            <h3>Issue Book</h3>
+                            <form id="issue-book-form">
+                                <div class="form-group">
+                                    <label>Book ID</label>
+                                    <input type="number" id="issue-book-id" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Student Name</label>
+                                    <input type="text" id="issue-student-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (Days)</label>
+                                    <input type="number" id="issue-days" value="14" min="1" required>
+                                </div>
+                                <button type="submit" class="btn-primary">Issue Book</button>
+                            </form>
+                        </div>
+                        <div class="glass-panel form-panel">
+                            <h3>Return Book</h3>
+                            <form id="return-book-form">
+                                <div class="form-group">
+                                    <label>Book ID</label>
+                                    <input type="number" id="return-book-id" required>
+                                </div>
+                                <button type="submit" class="btn-secondary">Return Book</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-students" class="view">
+                    <div class="table-container glass-panel">
+                        <h3>Current Borrowers</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Book ID</th>
+                                    <th>Student Name</th>
+                                    <th>Book Title</th>
+                                    <th>Issued Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-history" class="view">
+                    <div class="table-container glass-panel">
+                        <h3>Transaction History</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                    <th>Book</th>
+                                    <th>Student</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-settings" class="view">
+                    <div class="glass-panel form-panel" style="max-width: 600px;">
+                        <h3><i class="fa-solid fa-key"></i> Reset Admin Credentials</h3>
+                        <p style="color: #94a3b8; margin-bottom: 20px;">Change your username and password. You'll need
+                            to log in again after resetting.</p>
+                        <form id="reset-password-form">
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" id="old-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Username</label>
+                                <input type="text" id="new-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" id="new-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <input type="password" id="confirm-password" required>
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <i class="fa-solid fa-rotate"></i> Reset Credentials
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
