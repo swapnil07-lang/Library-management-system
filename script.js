@@ -238,16 +238,14 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize admin with defaults first
+    // ALWAYS reset to default admin credentials to fix login issues
     AppState.admin = { username: 'admin', password: 'admin' };
 
-    // Load from localStorage if using it (will override admin if custom credentials exist)
+    // Clear any corrupted admin data from localStorage
     if (USE_LOCAL_STORAGE) {
+        localStorage.removeItem('lms_admin');
         loadFromLocalStorage();
-        // If no admin in localStorage, save the default
-        if (!localStorage.getItem('lms_admin')) {
-            saveToLocalStorage();
-        }
+        saveToLocalStorage(); // Save the default admin credentials
     }
 
     // Show login screen
