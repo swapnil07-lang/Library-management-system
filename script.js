@@ -1,4 +1,5 @@
-// API Configuration
+// Configuration - Switch between backend modes
+const USE_LOCAL_STORAGE = true; // Set to false to use C backend
 const API_BASE = 'http://localhost:8080/api';
 
 // Data Structures (for frontend state)
@@ -30,8 +31,40 @@ const AppState = {
     currentUser: null
 };
 
-// API Functions
+// LocalStorage Functions
+function saveToLocalStorage() {
+    if (USE_LOCAL_STORAGE) {
+        localStorage.setItem('lms_books', JSON.stringify(AppState.books));
+        localStorage.setItem('lms_students', JSON.stringify(AppState.students));
+        localStorage.setItem('lms_history', JSON.stringify(AppState.history));
+        localStorage.setItem('lms_admin', JSON.stringify(AppState.admin));
+    }
+}
+
+function loadFromLocalStorage() {
+    if (USE_LOCAL_STORAGE) {
+        const books = localStorage.getItem('lms_books');
+        const students = localStorage.getItem('lms_students');
+        const history = localStorage.getItem('lms_history');
+        const admin = localStorage.getItem('lms_admin');
+
+        if (books) AppState.books = JSON.parse(books);
+        if (students) AppState.students = JSON.parse(students);
+        if (history) AppState.history = JSON.parse(history);
+        // Only load admin if it exists, otherwise keep default
+        if (admin) AppState.admin = JSON.parse(admin);
+    }
+}
+
+// API Functions - With LocalStorage fallback
 async function fetchBooks() {
+    if (USE_LOCAL_STORAGE) {
+        loadFromLocalStorage();
+        renderBooksTable();
+        updateStats();
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/books`);
         const data = await response.json();
@@ -45,6 +78,13 @@ async function fetchBooks() {
 }
 
 async function fetchStudents() {
+    if (USE_LOCAL_STORAGE) {
+        loadFromLocalStorage();
+        renderStudentsTable();
+        updateStats();
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/students`);
         const data = await response.json();
@@ -57,6 +97,13 @@ async function fetchStudents() {
 }
 
 async function addBookAPI(id, title, author) {
+    if (USE_LOCAL_STORAGE) {
+        const newBook = new Book(id, title, author, true);
+        AppState.books.push(newBook);
+        saveToLocalStorage();
+        return true;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/books`, {
             method: 'POST',
@@ -71,6 +118,33 @@ async function addBookAPI(id, title, author) {
 }
 
 async function issueBookAPI(bookId, studentName, days) {
+    if (USE_LOCAL_STORAGE) {
+        const book = AppState.books.find(b => b.id === bookId);
+        if (book && book.available) {
+            book.available = false;
+
+            const today = new Date();
+            const dueDate = new Date(today);
+            dueDate.setDate(today.getDate() + days);
+
+            const newStudent = new Student(
+                bookId,
+                studentName,
+                book.title,
+                today.toISOString().split('T')[0],
+                dueDate.toISOString().split('T')[0]
+            );
+            AppState.students.push(newStudent);
+
+            // Add to history
+            addToHistory('Issue', book.title, studentName);
+
+            saveToLocalStorage();
+            return true;
+        }
+        return false;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/issue`, {
             method: 'POST',
@@ -85,6 +159,23 @@ async function issueBookAPI(bookId, studentName, days) {
 }
 
 async function returnBookAPI(bookId) {
+    if (USE_LOCAL_STORAGE) {
+        const studentIndex = AppState.students.findIndex(s => s.bookId === bookId);
+        if (studentIndex !== -1) {
+            const student = AppState.students[studentIndex];
+            AppState.students.splice(studentIndex, 1);
+            const book = AppState.books.find(b => b.id === bookId);
+            if (book) {
+                book.available = true;
+                // Add to history
+                addToHistory('Return', book.title, student.name);
+            }
+            saveToLocalStorage();
+            return true;
+        }
+        return false;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/return`, {
             method: 'POST',
@@ -99,6 +190,16 @@ async function returnBookAPI(bookId) {
 }
 
 async function deleteBookAPI(id) {
+    if (USE_LOCAL_STORAGE) {
+        const bookIndex = AppState.books.findIndex(b => b.id === id);
+        if (bookIndex !== -1) {
+            AppState.books.splice(bookIndex, 1);
+            saveToLocalStorage();
+            return true;
+        }
+        return false;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/books/${id}`, {
             method: 'DELETE'
@@ -107,6 +208,21 @@ async function deleteBookAPI(id) {
     } catch (error) {
         console.error('Error deleting book:', error);
         return false;
+    }
+}
+
+// Helper function to add history entries
+function addToHistory(action, bookTitle, studentName) {
+    const historyEntry = {
+        date: new Date().toISOString(),
+        action: action,
+        bookTitle: bookTitle,
+        studentName: studentName
+    };
+    AppState.history.unshift(historyEntry); // Add to beginning for newest first
+    // Keep only last 100 entries
+    if (AppState.history.length > 100) {
+        AppState.history = AppState.history.slice(0, 100);
     }
 }
 
@@ -122,6 +238,18 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize admin with defaults first
+    AppState.admin = { username: 'admin', password: 'admin' };
+
+    // Load from localStorage if using it (will override admin if custom credentials exist)
+    if (USE_LOCAL_STORAGE) {
+        loadFromLocalStorage();
+        // If no admin in localStorage, save the default
+        if (!localStorage.getItem('lms_admin')) {
+            saveToLocalStorage();
+        }
+    }
+
     // Show login screen
     loginScreen.classList.add('active');
 
@@ -135,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 1. Create Admin (not needed since C backend has hardcoded admin)
 createAdminForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    showNotification('Admin already exists in C backend (admin/admin)', 'info');
+    showNotification('Admin already exists (admin/admin)', 'info');
     createAdminScreen.classList.remove('active');
     loginScreen.classList.add('active');
 });
@@ -178,6 +306,11 @@ navLinks.forEach(link => {
             view.classList.remove('active');
             if (view.id === viewId) view.classList.add('active');
         });
+
+        // Render history table when history view is shown
+        if (link.dataset.view === 'history') {
+            renderHistoryTable();
+        }
     });
 });
 
@@ -192,6 +325,25 @@ document.getElementById('reset-password-form').addEventListener('submit', async 
 
     if (newPassword !== confirmPassword) {
         showNotification('Passwords do not match!', 'error');
+        return;
+    }
+
+    if (oldPassword !== AppState.admin.password) {
+        showNotification('Invalid old password!', 'error');
+        return;
+    }
+
+    if (USE_LOCAL_STORAGE) {
+        AppState.admin = { username: newUsername, password: newPassword };
+        saveToLocalStorage();
+        showNotification('Credentials updated! Please log in again.', 'success');
+
+        setTimeout(() => {
+            AppState.currentUser = null;
+            dashboardScreen.classList.remove('active');
+            loginScreen.classList.add('active');
+            document.getElementById('reset-password-form').reset();
+        }, 1500);
         return;
     }
 
@@ -259,7 +411,7 @@ document.getElementById('issue-book-form').addEventListener('submit', async (e) 
     e.preventDefault();
     const id = parseInt(document.getElementById('issue-book-id').value);
     const studentName = document.getElementById('issue-student-name').value;
-    const days = document.getElementById('issue-days').value || 14;
+    const days = parseInt(document.getElementById('issue-days').value) || 14;
 
     const book = AppState.books.find(b => b.id === id);
 
@@ -382,17 +534,32 @@ function renderHistoryTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    AppState.history.forEach(entry => {
+    AppState.history.forEach((entry, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${new Date(entry.date).toLocaleString()}</td>
             <td><span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary)">${entry.action}</span></td>
             <td>${entry.bookTitle}</td>
             <td>${entry.studentName}</td>
+            <td>
+                <button class="action-btn delete" onclick="deleteHistoryEntry(${index})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
+
+// Delete history entry
+window.deleteHistoryEntry = (index) => {
+    if (!confirm('Are you sure you want to delete this history entry?')) return;
+
+    AppState.history.splice(index, 1);
+    saveToLocalStorage();
+    renderHistoryTable();
+    showNotification('History entry deleted.', 'success');
+};
 
 function updateStats() {
     document.getElementById('total-books').textContent = AppState.books.length;

@@ -2,6 +2,10 @@
 
 A modern, full-stack Library Management System with a C backend and beautiful web frontend.
 
+> **⚠️ Important Note About Deployment:**  
+> This application requires a **C backend server** running locally. The GitHub Pages deployment shows the frontend only.  
+> To use the full application with all features, you must **run it locally** by following the installation instructions below.
+
 ## Features
 
 - 📚 **Book Management**: Add, view, and delete books
